@@ -1,7 +1,16 @@
 use super::Strategy;
 use std::collections::HashMap;
+use serde::Deserialize;
 
+const STRATEGY_NAME: &str = "grid";
+const EXCHANGE: &str = "EX1";
+
+
+#[derive(Debug, Deserialize)]
 struct GridParam {
+    amount: f32,
+    spread: f32,
+    symbol: String
 
 }
 
@@ -16,17 +25,20 @@ pub(crate) struct GridStrategy {
 
 impl Strategy for GridStrategy {
     
-    fn new() -> Self {
-        Self {  }
+    fn new(exchange:String,symbols:Vec<String>) -> Self {
+        
+        let grid_params =  load_grid_params();
+        Self {exchange,symbols,grid_params  }
         
     }
 
-    fn setup(&self) {
-        todo!()
-        // Forget this function just put everything in new.
-    }
 
     fn on_tick(&self) {
         todo!()
     }
 }
+
+    fn load_grid_params() -> HashMap<String,GridParam>{
+        todo!();
+    }
+    
