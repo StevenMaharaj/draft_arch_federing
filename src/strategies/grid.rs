@@ -18,7 +18,8 @@ struct GridParam {
 pub(crate) struct GridStrategy {
     exchange: String,
     symbols: Vec<String>,
-    grid_params: HashMap<String,GridParam>
+    grid_params: HashMap<String,GridParam>,
+    orders: HashMap<String, i32>
 
 
 }
@@ -28,7 +29,11 @@ impl Strategy for GridStrategy {
     fn new(exchange:String,symbols:Vec<String>) -> Self {
         
         let grid_params =  load_grid_params();
-        Self {exchange,symbols,grid_params  }
+        let mut orders = HashMap::new();
+        symbols.iter().for_each(|s| {
+            orders.insert(s.to_string(),0);
+        });
+        Self {exchange,symbols,grid_params,orders  }
         
     }
 
