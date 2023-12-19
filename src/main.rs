@@ -5,8 +5,8 @@ mod flog;
 
 use std::error::Error;
 
-use tokio::sync::oneshot;
-use exchange1::order_feed as e1;
+// use tokio::sync::mpsc;
+// use exchange1::order_feed as e1;
 use strategies::{run_stategy, Strategies};
 
 
@@ -14,21 +14,30 @@ use strategies::{run_stategy, Strategies};
 async fn main() -> Result<(),Box<dyn Error>> {
     
     
-    flog::get_logger()?;
+    let r = flog::get_logger();
+    match r {
+        Ok(_) => {}
+        Err(e) => {
+            println!("Error setting up logger: {}",e);
+        }
+    }
     let strategy = Strategies::Grid;
     
     
     
-    let (tx, rx) = oneshot::channel::<ftypes::Order>();
+    // let (tx, rx) = mpsc::channel::<ftypes::Order>(100);
     
     
     
     
     tokio::spawn(async move {
-        
-        run_stategy(strategy);
-        let order_feed = e1::OrderFeed::new(tx);
-    });
+        println!("strat Thread spawned");
+        run_stategy(strategy).await;
+        // let order_feed = e1::OrderFeed::new(tx);
+    }).await?;
+
+    
+    
 
     Ok(())
 

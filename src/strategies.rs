@@ -1,31 +1,32 @@
 use crate::strategies::grid::GridStrategy;
-
+use async_trait::async_trait;
 mod grid;
 
 pub enum Strategies {
     Grid,
 }
 
+#[async_trait]
 trait Strategy {
-    fn new(exchange:String,symbols:Vec<String>) -> Self;
-    fn on_tick(&self);
+    fn new() -> Self;
+    async fn on_tick(&mut self);
 
 }
 
 
-pub fn run_stategy(strategy: Strategies) {
+pub async fn run_stategy(strategy: Strategies) {
 
-    let stat_to_run = match strategy {
+    let mut stat_to_run = match strategy {
         Strategies::Grid => {
             println!("You have selected the grid bot");
-            GridStrategy::new("EX1",
-        vec!["BTC-USDT".to_string()])
+            GridStrategy::new()
             
         }
     }; 
     loop {
-        todo!("Check the cmd channel");
-        stat_to_run.on_tick();
+        // todo!("Check the cmd channel");
+        // println!("On tick fn");
+        stat_to_run.on_tick().await;
     }
 
 }

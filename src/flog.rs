@@ -7,9 +7,10 @@ pub fn get_logger() -> Result<(),Box<dyn Error>>{
 
 
     let d = Utc::now();
+    // let dn = d.date_naive();
     let sd = d.date_naive().to_string();
 
-    let folder = "~/federing/logs";
+    let folder = "/home/steve/federing/logs";
     let file = format!("{sd}.log");
     
     let path_name = format!("{}/{}",folder,file);
