@@ -34,7 +34,9 @@ pub(crate) struct GridStrategy {
 #[async_trait]
 impl Strategy for GridStrategy {
     
-    fn new() -> Self {
+    async fn new() -> Self {
+
+        info!("Grid Strategy created");
         let exchange = EXCHANGE.to_string();
         
         let grid_params =  Self::load_grid_params();
@@ -47,21 +49,27 @@ impl Strategy for GridStrategy {
 
         // set up channels
 
-        let (order_tx, order_rx) = mpsc::channel::<Order>(100);
-        let (trade_tx, trade_rx) = mpsc::channel::<Trade>(100);
+        let (order_tx, order_rx) = mpsc::channel::<Order>(10);
+        let (trade_tx, trade_rx) = mpsc::channel::<Trade>(10);
 
 
-        tokio::spawn(async move {
+        let oft = tokio::spawn(async move {
             println!("Order feed thread spawned");
             let order_feed = OrderFeed::new(order_tx);
             order_feed.start().await;
         });
 
-        tokio::spawn(async move {
+        let tft = tokio::spawn(async move {
             println!("Trade feed thread spawned");
             let mut trade_feed = TradeFeed::new(trade_rx);
             trade_feed.start().await;
         });
+
+        tokio::spawn(async move {
+            tft.await.unwrap();
+            oft.await.unwrap();
+        });
+        
 
         Self {exchange,symbols,grid_params,orders ,order_rx, trade_tx}
         
@@ -71,27 +79,45 @@ impl Strategy for GridStrategy {
     async fn on_tick(&mut self) {
         // todo!()
         println!("on tick");
-        let new_order = self.order_rx.recv().await;
-        match new_order {
-            Some(o) => {
-                println!("Got order {}", o.as_log());
-                let trade = self.replace_order(&o);
-                println!("Sending trade {}", trade.as_log());
-                let res = self.trade_tx.send(trade.clone()).await;
-                println!("Trade chanel grid {}",self.trade_tx.capacity());
-                match res {
-                    Ok(_) => {
-                        info!("SENT On Trade channel {}", trade.as_log())
-                    }
-                    Err(e) => {
-                        println!("Error sending trade: {}", e);
-                    }
+        
+
+
+        while let Some(new_order) = self.order_rx.recv().await {
+            println!("Got order {}", new_order.as_log());
+            let trade = self.replace_order(&new_order);
+            println!("Sending trade {}", trade.as_log());
+            let res = &self.trade_tx.send(trade.clone()).await;
+            println!("Trade chanel grid {}",&self.trade_tx.capacity());
+            match res {
+                Ok(_) => {
+                    info!("SENT On Trade channel {}", trade.as_log())
+                }
+                Err(e) => {
+                    println!("Error sending trade: {}", e);
                 }
             }
-            None => {
-                println!("No order received");
-            }
-        }
+        };
+        // println!("aot");
+        // match new_order {
+        //     Some(o) => {
+        //         println!("Got order {}", o.as_log());
+        //         let trade = self.replace_order(&o);
+        //         println!("Sending trade {}", trade.as_log());
+        //         let res = &self.trade_tx.send(trade.clone()).await;
+        //         println!("Trade chanel grid {}",&self.trade_tx.capacity());
+        //         match res {
+        //             Ok(_) => {
+        //                 info!("SENT On Trade channel {}", trade.as_log())
+        //             }
+        //             Err(e) => {
+        //                 println!("Error sending trade: {}", e);
+        //             }
+        //         }
+        //     }
+        //     None => {
+        //         println!("No order received");
+        //     }
+        // }
         // look at order channel
         // Check we are with the limits
         // 
@@ -120,7 +146,7 @@ impl GridStrategy {
         // grid_params.insert("SOLUSDT".to_string(),GridParam{amount:0.01,spread:0.01,symbol:"SOLUSDT".to_string()});
         // grid_params.insert("MATICUSDT".to_string(),GridParam{amount:0.01,spread:0.01,symbol:"MATICUSDT".to_string()});
         
-        return grid_params;
+        grid_params
         
     }
 

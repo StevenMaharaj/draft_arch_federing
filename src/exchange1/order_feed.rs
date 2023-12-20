@@ -19,7 +19,7 @@ impl OrderFeed {
 
     pub async fn start(&self) {
         loop {
-            sleep(Duration::from_millis(1000));
+            sleep(Duration::from_millis(5000));
             let o= Order::new(12.3,10.9,Side::Buy,"BTCUSDT".to_string());
             
             
